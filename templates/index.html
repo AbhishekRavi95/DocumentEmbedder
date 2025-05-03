@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- File Upload Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary bg-opacity-25">
+                <h2 class="h5 mb-0">
+                    <i class="fas fa-upload me-2"></i>Upload a Document
+                </h2>
+            </div>
+            <div class="card-body">
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div class="mb-4 text-center">
+                        <div class="file-upload-wrapper p-4 border rounded bg-dark bg-opacity-25">
+                            <label for="file-upload" class="d-block mb-3">
+                                <i class="fas fa-file-upload fa-3x mb-3"></i>
+                                <p class="mb-1">Drag and drop your file here or click to browse</p>
+                                <small class="text-muted">Supported formats: PDF, Excel (.xlsx, .xls), Word (.docx)</small>
+                            </label>
+                            <input type="file" id="file-upload" name="file" class="d-none">
+                            <div id="file-info" class="mt-2 d-none">
+                                <span class="badge bg-info text-dark p-2"><i class="fas fa-file me-1"></i> <span id="file-name"></span></span>
+                                <button type="button" id="remove-file" class="btn btn-sm btn-link text-danger">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" id="process-btn" class="btn btn-primary" disabled>
+                            <i class="fas fa-cogs me-1"></i> Process Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Processing Status Card -->
+        <div id="processing-status" class="card mb-4 d-none">
+            <div class="card-header bg-info bg-opacity-25">
+                <h2 class="h5 mb-0">
+                    <i class="fas fa-spinner me-2"></i>Processing
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div class="progress mb-3">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                </div>
+                <p id="status-message" class="text-center mb-0">Uploading document...</p>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div id="results-card" class="card mb-4 d-none">
+            <div class="card-header bg-success bg-opacity-25">
+                <h2 class="h5 mb-0">
+                    <i class="fas fa-check-circle me-2"></i>Processing Complete
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light mb-4">
+                    <h4 id="result-filename" class="h6 mb-2"><i class="fas fa-file-alt me-2"></i>Filename: <span></span></h4>
+                    <p class="mb-1"><i class="fas fa-align-left me-2"></i>Extracted text length: <span id="text-length"></span> characters</p>
+                    <p class="mb-0"><i class="fas fa-vector-square me-2"></i>Embedding dimensions: <span id="embedding-size"></span></p>
+                </div>
+                <div class="text-center">
+                    <a href="/download" class="btn btn-success" id="download-btn">
+                        <i class="fas fa-download me-1"></i> Download Embeddings (JSON)
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary ms-2" id="process-another-btn">
+                        <i class="fas fa-redo me-1"></i> Process Another Document
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Card -->
+        <div id="error-card" class="card mb-4 d-none">
+            <div class="card-header bg-danger bg-opacity-25">
+                <h2 class="h5 mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>Error
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger mb-4">
+                    <p id="error-message" class="mb-0"></p>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-secondary" id="try-again-btn">
+                        <i class="fas fa-redo me-1"></i> Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Information Section -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-info bg-opacity-10">
+                <h2 class="h5 mb-0">
+                    <i class="fas fa-info-circle me-2"></i>About Document Embeddings
+                </h2>
+            </div>
+            <div class="card-body">
+                <h3 class="h6 mb-3">What are document embeddings?</h3>
+                <p>Document embeddings are numerical vector representations of text that capture semantic meaning. This tool uses TF-IDF vectorization to convert your document text into embeddings.</p>
+                
+                <h3 class="h6 mb-3">Supported file types:</h3>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item bg-transparent"><i class="fas fa-file-pdf text-danger me-2"></i> PDF documents</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-file-excel text-success me-2"></i> Excel spreadsheets (.xlsx, .xls)</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-file-word text-primary me-2"></i> Word documents (.docx)</li>
+                </ul>
+                
+                <h3 class="h6 mb-3">What can you do with embeddings?</h3>
+                <p>Embeddings are useful for:</p>
+                <ul>
+                    <li>Document similarity comparisons</li>
+                    <li>Semantic search systems</li>
+                    <li>Text clustering and classification</li>
+                    <li>Building recommendation systems</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,7 +1,0 @@
-flask
-werkzeug
-pypdf
-python-docx
-sentence-transformers
-numpy
-scikit-learn

@@ -1,4 +1,4 @@
-from app import app
+# main.py - Entry point for Vercel
+from app import app  # Import the Flask app from app.py
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+# DO NOT run app.run() here — Vercel handles serving the app
